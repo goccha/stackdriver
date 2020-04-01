@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/goccha/envar"
 	"github.com/goccha/http-constants/pkg/headers"
-	"github.com/goccha/stackdriver/pkg/log"
 	"github.com/rs/zerolog"
 	"go.opencensus.io/exporter/stackdriver/propagation"
 	"go.opencensus.io/plugin/ochttp"
@@ -20,6 +19,14 @@ const (
 	TracingKey = "tracingContext"
 	Uid        = "uid"
 )
+
+func init() {
+	if Service == "" {
+		Service = envar.String("GAE_SERVICE", "K_SERVICE")
+	}
+}
+
+var Service string
 
 func NewExporter(options *stackdriver.Options) (*stackdriver.Exporter, error) {
 	// Create and register a OpenCensus Stackdriver Trace exporter.
@@ -72,7 +79,7 @@ func With(ctx context.Context, req *http.Request) context.Context {
 		Path:      req.URL.Path,
 		ClientIP:  ClientIP(req),
 		RequestID: req.Header.Get(headers.RequestID),
-		Service:   log.Service,
+		Service:   Service,
 	})
 }
 
