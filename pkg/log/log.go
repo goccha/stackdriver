@@ -42,22 +42,47 @@ func Warn(ctx context.Context) *zerolog.Event {
 	return WithTrace(ctx, log.Warn()).Str("severity", "WARNING")
 }
 
-func Error(ctx context.Context) *zerolog.Event {
-	return WithTrace(ctx, errorLogger.Error()).Str("severity", "ERROR").Str("@type", ErrorReport)
+func Error(ctx context.Context, skip ...int) *zerolog.Event {
+	logger := errorLogger
+	if skip != nil && len(skip) > 0 {
+		skipCount := zerolog.CallerSkipFrameCount + skip[0]
+		logger = zerolog.New(os.Stderr).With().CallerWithSkipFrameCount(skipCount).Timestamp().Logger()
+	}
+	return WithTrace(ctx, logger.Error()).Str("severity", "ERROR").Str("@type", ErrorReport)
 }
 
-func Fatal(ctx context.Context) *zerolog.Event {
-	return WithTrace(ctx, errorLogger.Error()).Str("severity", "CRITICAL").Str("@type", ErrorReport)
+func Fatal(ctx context.Context, skip ...int) *zerolog.Event {
+	logger := errorLogger
+	if skip != nil && len(skip) > 0 {
+		skipCount := zerolog.CallerSkipFrameCount + skip[0]
+		logger = zerolog.New(os.Stderr).With().CallerWithSkipFrameCount(skipCount).Timestamp().Logger()
+	}
+	return WithTrace(ctx, logger.Error()).Str("severity", "CRITICAL").Str("@type", ErrorReport)
 }
 
-func Critical(ctx context.Context) *zerolog.Event {
-	return WithTrace(ctx, errorLogger.Error()).Str("severity", "CRITICAL").Str("@type", ErrorReport)
+func Critical(ctx context.Context, skip ...int) *zerolog.Event {
+	logger := errorLogger
+	if skip != nil && len(skip) > 0 {
+		skipCount := zerolog.CallerSkipFrameCount + skip[0]
+		logger = zerolog.New(os.Stderr).With().CallerWithSkipFrameCount(skipCount).Timestamp().Logger()
+	}
+	return WithTrace(ctx, logger.Error()).Str("severity", "CRITICAL").Str("@type", ErrorReport)
 }
 
-func Alert(ctx context.Context) *zerolog.Event {
-	return WithTrace(ctx, errorLogger.Error()).Str("severity", "ALERT").Str("@type", ErrorReport)
+func Alert(ctx context.Context, skip ...int) *zerolog.Event {
+	logger := errorLogger
+	if skip != nil && len(skip) > 0 {
+		skipCount := zerolog.CallerSkipFrameCount + skip[0]
+		logger = zerolog.New(os.Stderr).With().CallerWithSkipFrameCount(skipCount).Timestamp().Logger()
+	}
+	return WithTrace(ctx, logger.Error()).Str("severity", "ALERT").Str("@type", ErrorReport)
 }
 
-func Emergency(ctx context.Context) *zerolog.Event {
-	return WithTrace(ctx, errorLogger.Error()).Str("severity", "EMERGENCY").Str("@type", ErrorReport)
+func Emergency(ctx context.Context, skip ...int) *zerolog.Event {
+	logger := errorLogger
+	if skip != nil && len(skip) > 0 {
+		skipCount := zerolog.CallerSkipFrameCount + skip[0]
+		logger = zerolog.New(os.Stderr).With().CallerWithSkipFrameCount(skipCount).Timestamp().Logger()
+	}
+	return WithTrace(ctx, logger.Error()).Str("severity", "EMERGENCY").Str("@type", ErrorReport)
 }
