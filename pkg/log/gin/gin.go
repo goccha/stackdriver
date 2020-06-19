@@ -68,11 +68,15 @@ func dumpHeaders(c *gin.Context) {
 	logger.Send()
 }
 
-func TraceRequest() gin.HandlerFunc {
+func TraceRequest(dump bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		dumpHeaders(c)
+		if dump {
+			dumpHeaders(c)
+		}
 		c.Request = c.Request.WithContext(trace.With(c.Request.Context(), c.Request))
-		log.Dump(c.Request.Context(), log.Debug(c.Request.Context())).Send()
+		if dump {
+			log.Dump(c.Request.Context(), log.Debug(c.Request.Context())).Send()
+		}
 		c.Next()
 	}
 }
