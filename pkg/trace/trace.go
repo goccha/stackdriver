@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/goccha/envar"
 	"github.com/goccha/http-constants/pkg/headers"
+	"github.com/goccha/http-constants/pkg/headers/forwarded"
 	"github.com/rs/zerolog"
 	"go.opencensus.io/exporter/stackdriver/propagation"
 	"go.opencensus.io/plugin/ochttp"
@@ -104,10 +105,10 @@ func (tc *TracingContext) Dump(ctx context.Context, log *zerolog.Event) *zerolog
 		Str("request_id", tc.RequestID)
 }
 
-func ClientIP(req *http.Request) string {
-	clientIP := req.Header.Get(headers.XForwardedFor)
-	clientIP = strings.TrimSpace(strings.Split(clientIP, ",")[0])
-	if clientIP == "" {
+func ClientIP(req *http.Request) (clientIP string) {
+	if v := req.Header.Get(headers.Forwarded); v != "" {
+		clientIP = forwarded.Parse(v).ClientIP()
+	} else if clientIP = strings.TrimSpace(strings.Split(req.Header.Get(headers.XForwardedFor), ",")[0]); clientIP == "" {
 		clientIP = strings.TrimSpace(req.Header.Get(headers.XRealIp))
 	}
 	if clientIP != "" {
