@@ -6,10 +6,34 @@ import (
 	"github.com/rs/zerolog/log"
 	"io"
 	"os"
+	"time"
 )
 
 func init() {
 	SetGlobalOut(os.Stdout)
+	level, ok := os.LookupEnv("LOG_LEVEL")
+	if !ok {
+		level = "debug"
+	}
+	if len(level) > 0 {
+		switch level {
+		case "debug":
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		case "info":
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		case "warn":
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		case "error":
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		case "fatal":
+			zerolog.SetGlobalLevel(zerolog.FatalLevel)
+		default:
+			zerolog.SetGlobalLevel(zerolog.NoLevel)
+		}
+	} else {
+		zerolog.SetGlobalLevel(zerolog.NoLevel)
+	}
+	zerolog.TimeFieldFormat = time.RFC3339Nano
 }
 
 func SetGlobalOut(w io.Writer) {
