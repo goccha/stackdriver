@@ -7,15 +7,18 @@ import (
 	"github.com/goccha/stackdriver/pkg/log"
 	"github.com/goccha/stackdriver/pkg/trace"
 	"github.com/rs/zerolog"
-	"io"
+	"strings"
 	"time"
 )
 
-func AccessLog() gin.HandlerFunc {
-	return JsonLogger(gin.DefaultWriter)
+func AccessLog(f ...func(e *zerolog.Event) *zerolog.Event) gin.HandlerFunc {
+	if f != nil && len(f) > 0 {
+		return JsonLogger(f[0])
+	}
+	return JsonLogger(nil)
 }
 
-func JsonLogger(out io.Writer, notlogged ...string) gin.HandlerFunc {
+func JsonLogger(f func(e *zerolog.Event) *zerolog.Event, notlogged ...string) gin.HandlerFunc {
 	var skip map[string]struct{}
 	if length := len(notlogged); length > 0 {
 		skip = make(map[string]struct{}, length)
@@ -27,7 +30,6 @@ func JsonLogger(out io.Writer, notlogged ...string) gin.HandlerFunc {
 		// Start timer
 		start := time.Now()
 		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
 		// Process request
 		c.Next()
 		// Log only when path is not being skipped
@@ -37,23 +39,26 @@ func JsonLogger(out io.Writer, notlogged ...string) gin.HandlerFunc {
 			latency := end.Sub(start)
 			ua := c.Request.Header.Get(headers.UserAgent)
 			comment := c.Errors.ByType(gin.ErrorTypePrivate).String()
-
-			if raw != "" {
-				path = path + "?" + raw
+			requestUrl := c.Request.URL.String()
+			if !strings.HasPrefix(requestUrl, "https://") && !strings.HasPrefix(requestUrl, "http://") {
+				scheme := "http://"
+				if c.Request.TLS != nil {
+					scheme = "https://"
+				}
+				requestUrl = scheme + c.Request.Host + requestUrl
 			}
-			scheme := "http://"
-			if c.Request.TLS != nil {
-				scheme = "https://"
-			}
-			url := scheme + c.Request.Host + c.Request.URL.String()
-
 			contentLength := c.Writer.Size()
-			log.Info(c.Request.Context()).Dict("httpRequest", zerolog.Dict().
+			e := log.Info(c.Request.Context()).Dict("httpRequest", zerolog.Dict().
 				Int("status", c.Writer.Status()).Str("remoteIp", trace.ClientIP(c.Request)).
 				Str("userAgent", ua).Str("latency", fmt.Sprintf("%vs", latency.Seconds())).
-				Str("requestMethod", c.Request.Method).Str("requestUrl", url).
+				Str("requestMethod", c.Request.Method).Str("requestUrl", requestUrl).
 				Str("protocol", c.Request.Proto).Int64("requestSize", c.Request.ContentLength).
-				Int("responseSize", contentLength)).Msg(comment)
+				Int("responseSize", contentLength))
+			if f != nil {
+				f(e).Msg(comment)
+			} else {
+				e.Msg(comment)
+			}
 		}
 	}
 }
